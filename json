@@ -1,0 +1,55 @@
+import boto3
+import pandas as pd
+import io
+
+s3 = boto3.resource('s3')
+bucket = s3.Bucket('pessoajuridicabucket-dess')
+prefix_objs = bucket.objects.filter(Delimiter='/', Prefix='plano/financiamento/filtrador9/')
+prefix_df = []
+
+
+
+
+s3 = boto3.resource('s3')
+bucket = s3.Bucket('pessoajuridicabucket-dess')
+s3_client =boto3.client('s3')
+s3_bucket_name='pessoajuridicabucket-dess'
+my_bucket=s3.Bucket(s3_bucket_name)
+bucket_list = []
+import json
+
+from ast import literal_eval
+import json
+import json
+
+#iterates through the files in the bucket
+my_bucket=s3.Bucket(s3_bucket_name)
+prefix_df = []
+for obj in my_bucket.objects.filter(Delimiter='/', Prefix='plano/financiamento/filtrador9/'):
+    key = obj.key
+    body = obj.get()['Body'].read()
+#     print(body)
+    data = literal_eval(body.decode('utf8'))
+    reso = json.dumps(data)
+    prefix_df.append(reso)
+    
+    
+print(prefix_df)
+print(type(prefix_df))
+df = spark.read.json(sc.parallelize(prefix_df), multiLine=True)
+
+df.show()
+df.count()
+
+#salvar para criar tabela,
+output_sumarizador= '%s%s%s' % ('s3://pessoajuridicabucket-', 'dess','/plano/financiamento/filtro')
+from awsglue.dynamicframe import DynamicFrame
+dif3 = DynamicFrame.fromDF(df, glueContext, 'test_nest')
+datasink= glueContext.write_dynamic_frame.from_options(frame = dif3,\
+connection_type = 's3', \
+connection_options = {'path': output_sumarizador,\
+    'compression': 'snappy'},
+    format='glueparquet',
+transformation_ctx = 'datasink')
+
+
